@@ -1,4 +1,4 @@
-# Digital clock using the Arduino Nano microcontroller
+# Digital clock with custom 3D printed case
 
 ### The clock in action
 ![The clock in action!](Clock.jpg)

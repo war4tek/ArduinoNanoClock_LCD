@@ -1,9 +1,7 @@
 # Digital clock with custom 3D printed case
 
-### The clock in action
 ![The clock in action!](Clock.jpg)
 
-### The inside of the clock
 ![The inside of the clock!](Clock_Inside.jpg)
 
 #### Parts List

@@ -1,15 +1,9 @@
 //Julian Apodaca
 //May 6, 2020
-//Arduino nano Clock
-//This program will display the current date and time
-//using the RTC DS3231 chip.
-//Output will be displayed onto a 16x2 LCD Screen
+//Arduino with 16x4 lcd screen
 //SDA -> A4
 //SCL -> A5
 
-#include <RtcDateTime.h>
-#include <RtcDS3231.h>
-#include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 #include <BigNumbers_I2C.h>
 

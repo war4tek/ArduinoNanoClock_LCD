@@ -6,7 +6,7 @@
 
 #### Parts List
 1. Arduino Nano 
-![Arduino Nano](arduino_nano.jpg)
+![Arduino Nano](ArduinoNano.jpg)
 
 3. DS3231 RTC Module
 4. 16x2 LCD

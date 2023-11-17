@@ -1,8 +1,4 @@
-//Julian Apodaca
-//May 6, 2020
-//Arduino with 16x4 lcd screen
-//SDA -> A4
-//SCL -> A5
+//Clock using the Arduino Nano with 16x2 lcd screen
 
 #include <LiquidCrystal_I2C.h>
 #include <BigNumbers_I2C.h>
@@ -12,13 +8,13 @@ RtcDS3231<TwoWire> rtc(Wire);
 RtcDateTime dt;
 BigNumbers_I2C big_num(&lcd);
 
-int hour;
-int minute;
-int seconds;
+unsigned int hour;
+unsigned int minute;
+unsigned int seconds;
 
 byte x = 0;
 byte y = 0;
-int number_of_digits = 0;
+unsigned int number_of_digits = 0;
 char *ptr;
 
 void setup(){
@@ -73,7 +69,7 @@ void loop() {
   lcd.print(ptr);
 }
 
-//sets the time - call this once to set time - not needed after this unless time is no longer consistent or 3v battery dies.
+//Call this once to set time - not needed after this unless time is no longer consistent or 3v battery dies.
 void setTime()
 {
   //parameters: year,month,day,hour(military),minutes,seconds
@@ -98,7 +94,7 @@ void clearScreen()
 }
 
 //converts military time to standard format
-int getHour(int hour)
+int getHour(unsigned hour)
 {
   if(hour > 12) return(hour-12);
   else if(hour == 0) return 12;

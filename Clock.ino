@@ -44,13 +44,10 @@ void printDate(){
 
 void printTime(){
   RtcDateTime dt = rtc.GetDateTime(); 
-  unsigned int hour;
-  unsigned int minute;
-  unsigned int seconds;
   
-  hour = getHour(dt.Hour());
-  minute = dt.Minute();
-  seconds = dt.Second();
+  unsigned int hour = getHour(dt.Hour());
+  unsigned int minute = dt.Minute();
+  unsigned seconds = dt.Second();
 
   //clears the screen when going from a double digit hour to a single digit hour or vice versa
   if((hour == 1 || hour == 10) && minute == 0 && seconds == 0){

@@ -1,96 +1,85 @@
-//Clock using the Arduino Nano with 16x2 lcd screen
+//Digital clock built with Arduino Nano, DS3231 RTC, and 16x2 LCD
+//Displays the Date and Time and Temperature
 
-#include <LiquidCrystal_I2C.h>
-#include <BigNumbers_I2C.h>
+#include <Wire.h>
+#include <RtcDS3231.h>
+#include <hd44780.h>
+#include <hd44780ioClass/hd44780_I2Cexp.h> 
 
-LiquidCrystal_I2C lcd(0x27,16,2);
+hd44780_I2Cexp lcd;
 RtcDS3231<TwoWire> rtc(Wire);
-RtcDateTime dt;
-BigNumbers_I2C big_num(&lcd);
 
-unsigned int hour;
-unsigned int minute;
-unsigned int seconds;
-
-byte x = 0;
-byte y = 0;
-unsigned int number_of_digits = 0;
 char *ptr;
 
 void setup(){
   initialize();  
-  //setTime();
 }
 void initialize()
 {
-  Serial.begin(9600);
-  lcd.begin();
+  lcd.begin(16,2);
   lcd.backlight();
   rtc.Begin();
-  big_num.begin();
 }
 
 void loop() {   
-  dt = rtc.GetDateTime();  
+  printDate();
+  printTime();
+  printTemperature();
+}
+
+void printDate(){
+  RtcDateTime dt = rtc.GetDateTime(); 
+  char dateString[20];
+
+  snprintf_P(dateString, 
+          countof(dateString),
+          PSTR("%02u/%02u/%04u"),
+          dt.Month(),
+          dt.Day(),
+          dt.Year());
+
+  lcd.setCursor(0,0);
+  lcd.print(dateString);
+}
+
+void printTime(){
+  RtcDateTime dt = rtc.GetDateTime(); 
+  unsigned int hour;
+  unsigned int minute;
+  unsigned int seconds;
+  
   hour = getHour(dt.Hour());
   minute = dt.Minute();
   seconds = dt.Second();
-  
+
+  //clears the screen when going from a double digit hour to a single digit hour or vice versa
   if((hour == 1 || hour == 10) && minute == 0 && seconds == 0){
-   clearScreen();
+   lcd.clear();
   }
-
-  if(hour > 9){
-    x = 0;
-    number_of_digits = 2;
-  }
-  else{
-    x = 2;
-    number_of_digits = 1;
-  }
-
-  lcd.setCursor(0,0);
-  big_num.displayLargeInt(hour,x,y,number_of_digits,false);
-
-  lcd.setCursor(6,0);
-  lcd.print('.');
-  lcd.setCursor(6,1);
-  lcd.print('.');
-  lcd.setCursor(7,0);
-
-  x = 7;
-  y = 0;
-  number_of_digits = 2;
-
-  big_num.displayLargeInt(minute,x,y,number_of_digits,true);
-  lcd.setCursor(14,1);
   
+  //print time
+  lcd.setCursor(0,1);
+  lcd.print(hour);
+  lcd.print(':');
+  if(minute < 10){
+    lcd.print("0" + minute); 
+  }else{
+    lcd.print(minute);
+  }
+
+  //print ampm
+  lcd.setCursor(6,1);
   get_ampm(dt.Hour());
   lcd.print(ptr);
 }
 
-//Call this once to set time - not needed after this unless time is no longer consistent or 3v battery dies.
-void setTime()
-{
-  //parameters: year,month,day,hour(military),minutes,seconds
-  RtcDateTime dt = RtcDateTime(2021,05,06,20,44,0);
-  rtc.SetDateTime(dt);
-}
-
-//clears the screen in the locations where the hour digit(s) are drawn to the lcd
-void clearScreen()
-{
-   //clear the first row (x,y)
-  big_num.clearLargeNumber(2,0);
-  big_num.clearLargeNumber(3,0);
-  big_num.clearLargeNumber(4,0); 
-  big_num.clearLargeNumber(5,0);
-  
-  //clear the second row (x,y)
-  big_num.clearLargeNumber(2,1);
-  big_num.clearLargeNumber(3,1);
-  big_num.clearLargeNumber(4,1); 
-  big_num.clearLargeNumber(5,1); 
+void printTemperature(){
+  RtcTemperature temp = rtc.GetTemperature();
+  lcd.setCursor(11,1);
+  lcd.print(round((temp.AsFloatDegC() *9/5)+32));
+  lcd.setCursor(14,1);
+  lcd.print((char)223);
+  lcd.print('F');
 }
 
 //converts military time to standard format

@@ -53,26 +53,34 @@ void printTime(){
   if((hour == 1 || hour == 10) && minute == 0 && seconds == 0){
    lcd.clear();
   }
-  
+
   //print time
   lcd.setCursor(0,1);
   lcd.print(hour);
   lcd.print(':');
-  if(minute < 10){
-    lcd.print("0" + minute); 
+  if(minute == 0){
+    lcd.print("00"); 
+  }else if (minute < 10){
+    lcd.print("0");
+    lcd.print(minute);
   }else{
     lcd.print(minute);
   }
-
-  //print ampm
-  lcd.setCursor(6,1);
+  
+  //print am/pm
+  if(hour < 10){
+    lcd.setCursor(5,1);
+  }else{
+    lcd.setCursor(6,1);
+  }
+  
   get_ampm(dt.Hour());
   lcd.print(ptr);
 }
 
 void printTemperature(){
   RtcTemperature temp = rtc.GetTemperature();
-  lcd.setCursor(11,1);
+  lcd.setCursor(12,1);
   lcd.print(round((temp.AsFloatDegC() *9/5)+32));
   lcd.setCursor(14,1);
   lcd.print((char)223);

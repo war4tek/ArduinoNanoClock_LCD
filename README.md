@@ -1,8 +1,8 @@
 # Digital clock with custom 3D printed case
 
-![The clock in action!](Clock.jpg)
+![The clock in action!](clock.jpg)
 
-![The inside of the clock!](Clock_Inside.jpg)
+![The inside of the clock!](clockInside.jpg)
 
 #### Parts List
 1. Arduino Nano 

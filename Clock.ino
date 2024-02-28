@@ -13,7 +13,9 @@ char *ptr;
 
 void setup(){
   initialize();  
+  //setTime();
 }
+
 void initialize()
 {
   lcd.begin(16,2);
@@ -25,6 +27,11 @@ void loop() {
   printDate();
   printTime();
   printTemperature();
+}
+
+void setTime(){
+  RtcDateTime compiled = RtcDateTime(__DATE__, __TIME__);
+  rtc.SetDateTime(compiled);
 }
 
 void printDate(){

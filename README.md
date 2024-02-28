@@ -2,8 +2,6 @@
 
 ![The clock in action!](clock.jpg)
 
-![The inside of the clock!](clockInside.jpg)
-
 #### Parts List
 1. Arduino Nano 
 2. DS3231 RTC Module

@@ -1,10 +1,12 @@
 //Digital clock built with Arduino Nano, DS3231 RTC, and 16x2 LCD
-//Displays the Date and Time and Temperature
+//Displays the Day of the week, Date and Time 
 
 #include <Wire.h>
 #include <RtcDS3231.h>
 #include <hd44780.h>
 #include <hd44780ioClass/hd44780_I2Cexp.h> 
+#include <EEPROM.h>
+#include <RTClib.h> 
 
 hd44780_I2Cexp lcd;
 RtcDS3231<TwoWire> rtc(Wire);
@@ -13,43 +15,116 @@ char *ptr;
 
 void setup(){
   initialize();  
-  //setTime();
+  //setCompiledTime();
 }
 
 void initialize()
 {
+  Wire.begin();
   lcd.begin(16,2);
   lcd.backlight();
   rtc.Begin();
+  Serial.begin(9600);
+  checkDst();
 }
 
 void loop() {   
-  printDate();
-  printTime();
-  printTemperature();
+  accountForDst();
+  displayDayOfWeek();
+  displayDate();
+  displayTime();
 }
 
-void setTime(){
+void checkDst() {
+  int dst;
+  EEPROM.get(0, dst);
+
+  if(dst != 0 && dst != 1)  
+  {     
+    dst = 1;  
+    EEPROM.put(0, dst);
+  }
+}
+
+void setCompiledTime(){
   RtcDateTime compiled = RtcDateTime(__DATE__, __TIME__);
-  rtc.SetDateTime(compiled);
+  const char* compileTimeString = __TIME__;
+
+  int hour, minute, second;
+
+  // Parse the time string to extract hour, minute, and second
+  sscanf(compileTimeString, "%d:%d:%d", &hour, &minute, &second);
+  second += 40;
+
+  // Adjust the time if seconds exceed 59
+  if (second >= 60) {
+    second -= 60;
+    minute += 1;
+    if (minute >= 60) {
+      minute -= 60;
+      hour += 1;
+      if (hour >= 24) {
+        hour -= 24;
+      }
+    }
+  }
+
+  // Convert the updated time back to a formatted string
+  char updatedTimeString[9]; // HH:MM:SS + null terminator
+  sprintf(updatedTimeString, "%02d:%02d:%02d", hour, minute, second);
+  RtcDateTime newTime = RtcDateTime(__DATE__,updatedTimeString);
+  rtc.SetDateTime(newTime);
 }
 
-void printDate(){
+void displayDate(){
   RtcDateTime dt = rtc.GetDateTime(); 
   char dateString[20];
 
+  char year[3];  
+  snprintf(year, sizeof(year), "%02u", dt.Year() % 100);
+
   snprintf_P(dateString, 
-          countof(dateString),
-          PSTR("%02u/%02u/%04u"),
+          sizeof(dateString),
+          PSTR("%02u/%02u/%s"),
           dt.Month(),
           dt.Day(),
-          dt.Year());
+          year);
 
-  lcd.setCursor(0,0);
+  lcd.setCursor(0,1);
   lcd.print(dateString);
 }
 
-void printTime(){
+void displayDayOfWeek(){
+  RtcDateTime dt = rtc.GetDateTime();
+  int dayOfTheWeek = dt.DayOfWeek();
+  String day = getDayOfWeek(dayOfTheWeek);
+
+  lcd.setCursor(0,0);
+  lcd.print(day);
+}
+
+String getDayOfWeek(int dayOfWeek){
+  switch(dayOfWeek){
+    case 1:
+      return "Monday";
+    case 2:
+      return "Tuesday";
+    case 3:
+      return "Wednesday";
+    case 4:
+      return "Thursday";
+    case 5:
+      return "Friday";
+    case 6: 
+      return "Saturday";
+    case 7:
+      return "Sunday";
+    default:
+      return "Invalid day of week";
+  }
+} 
+
+void displayTime(){
   RtcDateTime dt = rtc.GetDateTime(); 
   
   unsigned int hour = getHour(dt.Hour());
@@ -61,8 +136,14 @@ void printTime(){
    lcd.clear();
   }
 
+  if(hour < 10){
+    lcd.setCursor(12,1);
+  }
+  else{
+    lcd.setCursor(11,1);
+  }
+
   //print time
-  lcd.setCursor(0,1);
   lcd.print(hour);
   lcd.print(':');
   if(minute == 0){
@@ -73,25 +154,6 @@ void printTime(){
   }else{
     lcd.print(minute);
   }
-  
-  //print am/pm
-  if(hour < 10){
-    lcd.setCursor(5,1);
-  }else{
-    lcd.setCursor(6,1);
-  }
-  
-  get_ampm(dt.Hour());
-  lcd.print(ptr);
-}
-
-void printTemperature(){
-  RtcTemperature temp = rtc.GetTemperature();
-  lcd.setCursor(12,1);
-  lcd.print(round((temp.AsFloatDegC() *9/5)+32));
-  lcd.setCursor(14,1);
-  lcd.print((char)223);
-  lcd.print('F');
 }
 
 //converts military time to standard format
@@ -102,8 +164,31 @@ int getHour(unsigned hour)
   else return hour;
 }
 
-//determines whether it's am or pm based on the military time. 
-void get_ampm(unsigned short hour){
-  if(hour < 12) ptr = "AM";
-  else ptr = "PM";
+void accountForDst(){
+  RtcDateTime now = rtc.GetDateTime(); 
+
+  uint8_t hour = getHour(now.Hour());
+  uint8_t minute = now.Minute();
+  uint8_t seconds = now.Second();
+  uint8_t month = now.Month();
+  uint8_t day = now.Day();
+  uint8_t year = now.Year();
+  uint8_t dayOfWeek = now.DayOfWeek();
+
+  int dst;
+
+  if (dayOfWeek == 0 && month == 3 && day >= 8 && day <= 16 && hour == 2 && minute == 0 && seconds == 0 && dst == 0)     
+  {
+    now += 60;
+    rtc.SetDateTime(now); 
+    dst = 1;       
+    EEPROM.put(0, dst);     
+  }     
+  else if(dayOfWeek == 0 && month == 11 && day >= 1 && day <= 8 && hour == 2 && minute == 0 && seconds == 0 && dst == 1)     
+  {   
+    now -= 60;
+    rtc.SetDateTime(now);
+    dst = 0;       
+    EEPROM.put(0, dst);     
+  }
 }

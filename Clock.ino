@@ -25,17 +25,17 @@ void initialize()
   lcd.backlight();
   rtc.Begin();
   Serial.begin(9600);
-  checkDst();
+  initializeDst();
 }
 
 void loop() {   
-  accountForDst();
+  checkForDst();
   displayDayOfWeek();
   displayDate();
   displayTime();
 }
 
-void checkDst() {
+void initializeDst() {
   int dst;
   EEPROM.get(0, dst);
 
@@ -54,6 +54,7 @@ void setCompiledTime(){
 
   // Parse the time string to extract hour, minute, and second
   sscanf(compileTimeString, "%d:%d:%d", &hour, &minute, &second);
+
   second += 40;
 
   // Adjust the time if seconds exceed 59
@@ -103,8 +104,11 @@ void displayDayOfWeek(){
   lcd.print(day);
 }
 
-String getDayOfWeek(int dayOfWeek){
-  switch(dayOfWeek){
+// dayOfWeek is 0-6, 0 = Sunday
+String getDayOfWeek(int dayOfTheWeek){
+  switch(dayOfTheWeek){
+    case 0:
+      return "Sunday";
     case 1:
       return "Monday";
     case 2:
@@ -117,8 +121,6 @@ String getDayOfWeek(int dayOfWeek){
       return "Friday";
     case 6: 
       return "Saturday";
-    case 7:
-      return "Sunday";
     default:
       return "Invalid day of week";
   }
@@ -164,7 +166,7 @@ int getHour(unsigned hour)
   else return hour;
 }
 
-void accountForDst(){
+void checkForDst(){
   RtcDateTime now = rtc.GetDateTime(); 
 
   uint8_t hour = getHour(now.Hour());

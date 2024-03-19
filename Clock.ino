@@ -6,7 +6,6 @@
 #include <hd44780.h>
 #include <hd44780ioClass/hd44780_I2Cexp.h> 
 #include <EEPROM.h>
-#include <RTClib.h> 
 
 hd44780_I2Cexp lcd;
 RtcDS3231<TwoWire> rtc(Wire);
@@ -28,13 +27,16 @@ void initialize()
   initializeDst();
 }
 
-void loop() {   
-  checkForDst();
-  displayDayOfWeek();
-  displayDate();
-  displayTime();
-  //disable backlight at night
+void loop() {  
+  RtcDateTime now = rtc.GetDateTime(); 
+  checkForDst(now);
   
+  String day  = getDayOfWeek(now);
+  lcd.setCursor(0,0);
+  lcd.print(day);
+  
+  displayDate(now);
+  displayTime(now);
 }
 
 void initializeDst() {
@@ -57,6 +59,7 @@ void setCompiledTime(){
   // Parse the time string to extract hour, minute, and second
   sscanf(compileTimeString, "%d:%d:%d", &hour, &minute, &second);
 
+  // Set clock a few seconds ahead 
   second += 40;
 
   // Adjust the time if seconds exceed 59
@@ -75,39 +78,36 @@ void setCompiledTime(){
   // Convert the updated time back to a formatted string
   char updatedTimeString[9]; // HH:MM:SS + null terminator
   sprintf(updatedTimeString, "%02d:%02d:%02d", hour, minute, second);
+  
+  // Convert string date to RtcDateTime
   RtcDateTime newTime = RtcDateTime(__DATE__,updatedTimeString);
+
+  //Set clock a few seconds ahead of time
   rtc.SetDateTime(newTime);
 }
 
-void displayDate(){
-  RtcDateTime dt = rtc.GetDateTime(); 
+void displayDate(RtcDateTime now){
   char dateString[20];
-
   char year[3];  
-  snprintf(year, sizeof(year), "%02u", dt.Year() % 100);
+
+  // Get last two digits of year
+  snprintf(year, sizeof(year), "%02u", now.Year() % 100);
 
   snprintf_P(dateString, 
           sizeof(dateString),
           PSTR("%02u/%02u/%s"),
-          dt.Month(),
-          dt.Day(),
+          now.Month(),
+          now.Day(),
           year);
 
   lcd.setCursor(0,1);
   lcd.print(dateString);
 }
 
-void displayDayOfWeek(){
-  RtcDateTime dt = rtc.GetDateTime();
-  int dayOfTheWeek = dt.DayOfWeek();
-  String day = getDayOfWeek(dayOfTheWeek);
-
-  lcd.setCursor(0,0);
-  lcd.print(day);
-}
-
-// dayOfWeek is 0-6, 0 = Sunday
-String getDayOfWeek(int dayOfTheWeek){
+// Return day of the week. Rtc returns 0-6, 0 = Sunday
+String getDayOfWeek(RtcDateTime now){
+  int dayOfTheWeek = now.DayOfWeek();
+  
   switch(dayOfTheWeek){
     case 0:
       return "Sunday";
@@ -128,17 +128,17 @@ String getDayOfWeek(int dayOfTheWeek){
   }
 } 
 
-void displayTime(){
-  RtcDateTime dt = rtc.GetDateTime(); 
-  unsigned int militaryHour = dt.Hour();
+void displayTime(RtcDateTime now){ 
+  unsigned int militaryHour = now.Hour();
   unsigned int hour = getHour(militaryHour);
-  unsigned int minute = dt.Minute();
-  unsigned seconds = dt.Second();
+  unsigned int minute = now.Minute();
+  unsigned seconds = now.Second();
 
   Serial.println(militaryHour);
 
-  //turn off backlight at bedtime
-  if((militaryHour>= 2000) || (militaryHour <= 6 && minute <= 25)){
+  //turn off backlight at bedtime and while at school 
+  if(((militaryHour >= 2000) || (militaryHour <= 6 && minute <= 25)) || 
+       ((militaryHour > 7 && militaryHour < 15 ))){
     lcd.noBacklight();
   }
   else{
@@ -168,7 +168,6 @@ void displayTime(){
   }else{
     lcd.print(minute);
   }
-
 }
 
 //converts military time to standard format
@@ -179,9 +178,7 @@ int getHour(unsigned hour)
   else return hour;
 }
 
-void checkForDst(){
-  RtcDateTime now = rtc.GetDateTime(); 
-
+void checkForDst(RtcDateTime now){
   uint8_t hour = getHour(now.Hour());
   uint8_t minute = now.Minute();
   uint8_t seconds = now.Second();

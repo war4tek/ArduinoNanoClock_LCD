@@ -33,6 +33,8 @@ void loop() {
   displayDayOfWeek();
   displayDate();
   displayTime();
+  //disable backlight at night
+  
 }
 
 void initializeDst() {
@@ -128,10 +130,20 @@ String getDayOfWeek(int dayOfTheWeek){
 
 void displayTime(){
   RtcDateTime dt = rtc.GetDateTime(); 
-  
-  unsigned int hour = getHour(dt.Hour());
+  unsigned int militaryHour = dt.Hour();
+  unsigned int hour = getHour(militaryHour);
   unsigned int minute = dt.Minute();
   unsigned seconds = dt.Second();
+
+  Serial.println(militaryHour);
+
+  //turn off backlight at bedtime
+  if((militaryHour>= 2000) || (militaryHour <= 6 && minute <= 25)){
+    lcd.noBacklight();
+  }
+  else{
+    lcd.backlight();
+  }
 
   //clears the screen when going from a double digit hour to a single digit hour or vice versa
   if((hour == 1 || hour == 10) && minute == 0 && seconds == 0){
@@ -156,6 +168,7 @@ void displayTime(){
   }else{
     lcd.print(minute);
   }
+
 }
 
 //converts military time to standard format

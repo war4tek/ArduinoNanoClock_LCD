@@ -82,7 +82,6 @@ void setCompiledTime(){
   // Convert string date to RtcDateTime
   RtcDateTime newTime = RtcDateTime(__DATE__,updatedTimeString);
 
-  //Set clock a few seconds ahead of time
   rtc.SetDateTime(newTime);
 }
 
@@ -104,7 +103,7 @@ void displayDate(RtcDateTime now){
   lcd.print(dateString);
 }
 
-// Return day of the week. Rtc returns 0-6, 0 = Sunday
+// Returns day of the week. Rtc gives 0-6, 0 = Sunday
 String getDayOfWeek(RtcDateTime now){
   int dayOfTheWeek = now.DayOfWeek();
   
@@ -134,23 +133,20 @@ void displayTime(RtcDateTime now){
   unsigned int minute = now.Minute();
   unsigned seconds = now.Second();
 
-  Serial.println(militaryHour);
-  Serial.println(minute);
-
- // Turn off back light at bedtime (8pm-6:30am) and during school (8am and 3:15pm)
-  if(((militaryHour <= 6 && minute >= 50) || militaryHour >= 20) || 
-       ((militaryHour <= 15 && minute >= 25) || (militaryHour >= 8))){
+  // Turn off backlight between the hours of 8pm and 7am.
+  if(militaryHour <= 7 || militaryHour >= 20){
     lcd.noBacklight();
   }
   else{
     lcd.backlight();
   }
 
-  //clears the screen when going from a double digit hour to a single digit hour or vice versa
+  // Clears the screen when going from a double digit hour to a single digit hour or vice versa
   if((hour == 1 || hour == 10) && minute == 0 && seconds == 0){
    lcd.clear();
   }
 
+  // Determines where to set the cursor
   if(hour < 10){
     lcd.setCursor(12,1);
   }
@@ -158,7 +154,7 @@ void displayTime(RtcDateTime now){
     lcd.setCursor(11,1);
   }
 
-  //print time
+  // Print time
   lcd.print(hour);
   lcd.print(':');
   if(minute == 0){
@@ -171,7 +167,7 @@ void displayTime(RtcDateTime now){
   }
 }
 
-//converts military time to standard format
+// Converts military time to standard format
 int getHour(unsigned hour)
 {
   if(hour > 12) return(hour-12);
@@ -189,7 +185,7 @@ void checkForDst(RtcDateTime now){
   uint8_t dayOfWeek = now.DayOfWeek();
 
   int dst;
-
+  
   if (dayOfWeek == 0 && month == 3 && day >= 8 && day <= 16 && hour == 2 && minute == 0 && seconds == 0 && dst == 0)     
   {
     now += 60;

@@ -135,10 +135,11 @@ void displayTime(RtcDateTime now){
   unsigned seconds = now.Second();
 
   Serial.println(militaryHour);
+  Serial.println(minute);
 
-  //turn off backlight at bedtime and while at school 
-  if(((militaryHour >= 20) || (militaryHour <= 6 && minute <= 25)) || 
-       ((militaryHour > 7 && militaryHour < 15 ))){
+ // Turn off back light at bedtime (8pm-6:30am) and during school (8am and 3:15pm)
+  if(((militaryHour <= 6 && minute >= 50) || militaryHour >= 20) || 
+       ((militaryHour <= 15 && minute >= 25) || (militaryHour >= 8))){
     lcd.noBacklight();
   }
   else{
